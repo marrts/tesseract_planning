@@ -48,6 +48,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 %shared_ptr(tesseract_planning::KPIECE1Configurator)
 %shared_ptr(tesseract_planning::BiTRRTConfigurator)
 %shared_ptr(tesseract_planning::RRTConfigurator)
+%shared_ptr(tesseract_planning::RRTHybridConfigurator)
 %shared_ptr(tesseract_planning::RRTConnectConfigurator)
 %shared_ptr(tesseract_planning::RRTstarConfigurator)
 %shared_ptr(tesseract_planning::TRRTConfigurator)
@@ -71,6 +72,7 @@ enum class OMPLPlannerType
   KPIECE1 = 4,
   BiTRRT = 5,
   RRT = 6,
+  RRTHybrid = 17,
   RRTConnect = 7,
   RRTstar = 8,
   TRRT = 9,
@@ -299,6 +301,34 @@ struct RRTConfigurator : public OMPLPlannerConfigurator
 
   /** @brief When close to goal select goal, with this probability. */
   double goal_bias = 0.05;
+
+  /** @brief Create the planner */
+  ompl::base::PlannerPtr create(ompl::base::SpaceInformationPtr si) const override;
+
+  OMPLPlannerType getType() const override;
+
+  /** @brief Serialize planner to xml */
+  tinyxml2::XMLElement* toXML(tinyxml2::XMLDocument& doc) const override;
+};
+
+struct RRTHybridConfigurator : public OMPLPlannerConfigurator
+{
+  RRTHybridConfigurator() = default;
+  ~RRTHybridConfigurator() override = default;
+  RRTHybridConfigurator(const RRTHybridConfigurator&) = default;
+  RRTHybridConfigurator& operator=(const RRTHybridConfigurator&) = default;
+  RRTHybridConfigurator(RRTHybridConfigurator&&) = default;
+  RRTHybridConfigurator& operator=(RRTHybridConfigurator&&) = default;
+  RRTHybridConfigurator(const tinyxml2::XMLElement& xml_element);
+
+  /** @brief Max motion added to tree */
+  double range = 0;
+
+  /** @brief When close to goal select goal, with this probability. */
+  double goal_bias = 0.10;
+
+  using genNewStateFn = std::function<void(const ompl::base::State*, ompl::base::State*&)>;
+  genNewStateFn gen_state_function = nullptr;
 
   /** @brief Create the planner */
   ompl::base::PlannerPtr create(ompl::base::SpaceInformationPtr si) const override;

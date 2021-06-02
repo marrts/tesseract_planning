@@ -34,6 +34,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <ompl/geometric/planners/rrt/BiTRRT.h>
 #include <ompl/geometric/planners/rrt/RRT.h>
 #include <ompl/geometric/planners/rrt/RRTConnect.h>
+#include <ompl/geometric/planners/rrt/RRTHybrid.h>
 #include <ompl/geometric/planners/rrt/RRTstar.h>
 #include <ompl/geometric/planners/rrt/TRRT.h>
 #include <ompl/geometric/planners/prm/PRM.h>
@@ -636,6 +637,67 @@ ompl::base::PlannerPtr RRTConfigurator::create(ompl::base::SpaceInformationPtr s
 OMPLPlannerType RRTConfigurator::getType() const { return OMPLPlannerType::RRT; }
 
 tinyxml2::XMLElement* RRTConfigurator::toXML(tinyxml2::XMLDocument& doc) const
+{
+  tinyxml2::XMLElement* ompl_xml = doc.NewElement("RRT");
+
+  tinyxml2::XMLElement* range_xml = doc.NewElement("Range");
+  range_xml->SetText(range);
+  ompl_xml->InsertEndChild(range_xml);
+
+  tinyxml2::XMLElement* goal_bias_xml = doc.NewElement("GoalBias");
+  goal_bias_xml->SetText(goal_bias);
+  ompl_xml->InsertEndChild(goal_bias_xml);
+
+  return ompl_xml;
+}
+
+RRTHybridConfigurator::RRTHybridConfigurator(const tinyxml2::XMLElement& xml_element)
+{
+  const tinyxml2::XMLElement* rrt_element = xml_element.FirstChildElement("RRT");
+  const tinyxml2::XMLElement* range_element = rrt_element->FirstChildElement("Range");
+  const tinyxml2::XMLElement* goal_bias_element = rrt_element->FirstChildElement("GoalBias");
+
+  tinyxml2::XMLError status;
+
+  if (range_element)
+  {
+    std::string range_string;
+    status = tesseract_common::QueryStringText(range_element, range_string);
+    if (status != tinyxml2::XML_NO_ATTRIBUTE && status != tinyxml2::XML_SUCCESS)
+      throw std::runtime_error("OMPLConfigurator: RRT: Error parsing Range string");
+
+    if (!tesseract_common::isNumeric(range_string))
+      throw std::runtime_error("OMPLConfigurator: RRT: Range is not a numeric values.");
+
+    tesseract_common::toNumeric<double>(range_string, range);
+  }
+
+  if (goal_bias_element)
+  {
+    std::string goal_bias_string;
+    status = tesseract_common::QueryStringText(goal_bias_element, goal_bias_string);
+    if (status != tinyxml2::XML_NO_ATTRIBUTE && status != tinyxml2::XML_SUCCESS)
+      throw std::runtime_error("OMPLConfigurator: RRT: Error parsing GoalBias string");
+
+    if (!tesseract_common::isNumeric(goal_bias_string))
+      throw std::runtime_error("OMPLConfigurator: RRT: GoalBias is not a numeric values.");
+
+    tesseract_common::toNumeric<double>(goal_bias_string, goal_bias);
+  }
+}
+
+ompl::base::PlannerPtr RRTHybridConfigurator::create(ompl::base::SpaceInformationPtr si) const
+{
+  auto planner = std::make_shared<ompl::geometric::RRTHybrid>(si);
+  planner->setRange(range);
+  planner->setGoalBias(goal_bias);
+  planner->setGenFunction(gen_state_function);
+  return planner;
+}
+
+OMPLPlannerType RRTHybridConfigurator::getType() const { return OMPLPlannerType::RRT; }
+
+tinyxml2::XMLElement* RRTHybridConfigurator::toXML(tinyxml2::XMLDocument& doc) const
 {
   tinyxml2::XMLElement* ompl_xml = doc.NewElement("RRT");
 
