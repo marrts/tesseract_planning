@@ -55,6 +55,8 @@ public:
   /** @brief Optimization paramters */
   sco::BasicTrustRegionSQPParameters opt_info;
 
+  sco::ModelConfig::Ptr model_config;
+
   void apply(trajopt::ProblemConstructionInfo& pci) const override;
 
   tinyxml2::XMLElement* toXML(tinyxml2::XMLDocument& doc) const override;

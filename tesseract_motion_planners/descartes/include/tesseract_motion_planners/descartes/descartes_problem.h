@@ -59,6 +59,10 @@ struct DescartesProblem
   std::vector<typename descartes_light::WaypointSampler<FloatType>::ConstPtr> samplers;
   std::vector<typename descartes_light::StateEvaluator<FloatType>::ConstPtr> state_evaluators;
   int num_threads = static_cast<int>(std::thread::hardware_concurrency());
+
+  bool use_ompl = false;
+  double ompl_max_cost = std::numeric_limits<double>::max();
+  double ompl_allowed_planning_time = 60.0;
 };
 using DescartesProblemF = DescartesProblem<float>;
 using DescartesProblemD = DescartesProblem<double>;

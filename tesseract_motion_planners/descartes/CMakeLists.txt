@@ -1,5 +1,6 @@
 find_package(descartes_light REQUIRED)
 find_package(tesseract_collision REQUIRED)
+find_package(ompl REQUIRED)
 
 # Descartes Planner
 add_library(
@@ -16,8 +17,10 @@ add_library(
 target_link_libraries(
   ${PROJECT_NAME}_descartes
   PUBLIC ${PROJECT_NAME}_core
+         ${OMPL_LIBRARIES}
          tesseract::tesseract_collision_core
          descartes::descartes_light
+         descartes::descartes_light_ompl
          Boost::boost
          ${CMAKE_THREAD_LIBS_INIT})
 target_compile_options(${PROJECT_NAME}_descartes PRIVATE ${TESSERACT_COMPILE_OPTIONS_PRIVATE})
@@ -32,6 +35,10 @@ target_code_coverage(
   ENABLE ${TESSERACT_ENABLE_CODE_COVERAGE})
 target_include_directories(${PROJECT_NAME}_descartes PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
                                                             "$<INSTALL_INTERFACE:include>")
+target_include_directories(${PROJECT_NAME}_descartes SYSTEM PUBLIC ${OMPL_INCLUDE_DIRS})
+if(OMPL_VERSION VERSION_LESS "1.4.0")
+  target_compile_definitions(${PROJECT_NAME}_ompl PUBLIC OMPL_LESS_1_4_0=ON)
+endif()
 
 # Mark cpp header files for installation
 install(DIRECTORY include/${PROJECT_NAME} DESTINATION include)

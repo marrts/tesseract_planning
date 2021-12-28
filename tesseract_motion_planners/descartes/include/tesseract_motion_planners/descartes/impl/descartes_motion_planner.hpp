@@ -29,6 +29,8 @@
 #include <tesseract_common/macros.h>
 TESSERACT_COMMON_IGNORE_WARNINGS_PUSH
 #include <descartes_light/solvers/ladder_graph/ladder_graph_solver.h>
+#include <descartes_light/ompl/ompl_solver.h>
+#include <descartes_light/ompl/descartes_space.h>
 #include <descartes_light/samplers/fixed_joint_waypoint_sampler.h>
 #include <vector>
 TESSERACT_COMMON_IGNORE_WARNINGS_POP
@@ -93,9 +95,18 @@ tesseract_common::StatusCode DescartesMotionPlanner<FloatType>::solve(const Plan
   descartes_light::SearchResult<FloatType> descartes_result;
   try
   {
-    descartes_light::LadderGraphSolver<FloatType> solver(problem->num_threads);
-    solver.build(problem->samplers, problem->edge_evaluators, problem->state_evaluators);
-    descartes_result = solver.search();
+    if (!problem->use_ompl)
+    {
+      descartes_light::LadderGraphSolver<FloatType> solver(problem->num_threads);
+      solver.build(problem->samplers, problem->edge_evaluators, problem->state_evaluators);
+      descartes_result = solver.search();
+    }
+    else
+    {
+      descartes_light::LadderGraphOMPLRRTConnectSolver<FloatType> solver(problem->ompl_max_cost, problem->ompl_allowed_planning_time, problem->num_threads);
+      solver.build(problem->samplers, problem->edge_evaluators, problem->state_evaluators);
+      descartes_result = solver.search();
+    }
     if (descartes_result.trajectory.empty())
     {
       CONSOLE_BRIDGE_logError("Search for graph completion failed");

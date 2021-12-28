@@ -35,6 +35,7 @@ TESSERACT_COMMON_IGNORE_WARNINGS_POP
 #include <tesseract_motion_planners/descartes/profile/descartes_profile.h>
 #include <tesseract_motion_planners/descartes/descartes_utils.h>
 #include <tesseract_motion_planners/descartes/types.h>
+#include <limits>
 
 #ifdef SWIG
 %shared_ptr(tesseract_planning::DescartesDefaultPlanProfile<double>)
@@ -96,6 +97,11 @@ public:
 
   /** @brief Flag to produce debug information during planning */
   bool debug{ false };
+
+  bool use_ompl{ false };
+
+  double ompl_max_cost = std::numeric_limits<double>::max();
+  double ompl_allowed_planning_time = 60.0;
 
   void apply(DescartesProblem<FloatType>& prob,
              const Eigen::Isometry3d& cartesian_waypoint,

@@ -267,6 +267,9 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
   }
 
   prob.num_threads = num_threads;
+  prob.use_ompl = use_ompl;
+  prob.ompl_max_cost = ompl_max_cost;
+  prob.ompl_allowed_planning_time = ompl_allowed_planning_time;
 }
 
 template <typename FloatType>
@@ -318,6 +321,9 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
   }
 
   prob.num_threads = num_threads;
+  prob.use_ompl = use_ompl;
+  prob.ompl_max_cost = ompl_max_cost;
+  prob.ompl_allowed_planning_time = ompl_allowed_planning_time;
 }
 
 template <typename FloatType>
