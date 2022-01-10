@@ -103,6 +103,11 @@ public:
   double ompl_max_cost = std::numeric_limits<double>::max();
   double ompl_allowed_planning_time = 60.0;
 
+  bool override_ik{ false };
+  std::string group_name;
+  std::string ik_solver_name;
+
+
   void apply(DescartesProblem<FloatType>& prob,
              const Eigen::Isometry3d& cartesian_waypoint,
              const Instruction& parent_instruction,

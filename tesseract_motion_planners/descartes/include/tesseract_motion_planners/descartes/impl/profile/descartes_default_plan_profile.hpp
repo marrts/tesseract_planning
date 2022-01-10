@@ -175,6 +175,14 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
   assert(!(manip_info.empty() && base_instruction.getManipulatorInfo().empty()));
   ManipulatorInfo mi = manip_info.getCombined(base_instruction.getManipulatorInfo());
 
+  tesseract_kinematics::KinematicGroup::ConstPtr manip;
+  if (override_ik)
+  {
+    manip = prob.env->getKinematicGroup(group_name, ik_solver_name);
+  }
+  else
+    manip = prob.manip;
+
   if (mi.manipulator.empty())
     throw std::runtime_error("Descartes, manipulator is empty!");
 
@@ -185,7 +193,7 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
     throw std::runtime_error("Descartes, working_frame is empty!");
 
   Eigen::Isometry3d tcp_offset = prob.env->findTCPOffset(mi);
-  std::vector<std::string> joint_names = prob.manip->getJointNames();
+  std::vector<std::string> joint_names = manip->getJointNames();
 
   /* Check if this cartesian waypoint is dynamic
    * (i.e. defined relative to a frame that will move with the kinematic chain) */
@@ -197,17 +205,17 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
 
   DescartesCollision::Ptr ci = nullptr;
   if (enable_collision)
-    ci = std::make_shared<DescartesCollision>(*prob.env, prob.manip, vertex_collision_check_config, debug);
+    ci = std::make_shared<DescartesCollision>(*prob.env, manip, vertex_collision_check_config, debug);
 
   // Add vertex evaluator
   std::shared_ptr<descartes_light::WaypointSampler<FloatType>> sampler;
   if (vertex_evaluator == nullptr)
   {
-    auto ve = std::make_shared<DescartesJointLimitsVertexEvaluator>(prob.manip->getLimits().joint_limits);
+    auto ve = std::make_shared<DescartesJointLimitsVertexEvaluator>(manip->getLimits().joint_limits);
     sampler = std::make_shared<DescartesRobotSampler<FloatType>>(mi.working_frame,
                                                                  cartesian_waypoint,
                                                                  target_pose_sampler,
-                                                                 prob.manip,
+                                                                 manip,
                                                                  ci,
                                                                  mi.tcp_frame,
                                                                  tcp_offset,
@@ -220,7 +228,7 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
     sampler = std::make_shared<DescartesRobotSampler<FloatType>>(mi.working_frame,
                                                                  cartesian_waypoint,
                                                                  target_pose_sampler,
-                                                                 prob.manip,
+                                                                 manip,
                                                                  ci,
                                                                  mi.tcp_frame,
                                                                  tcp_offset,
@@ -241,7 +249,7 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
         compound_evaluator->evaluators.push_back(
             std::make_shared<descartes_light::EuclideanDistanceEdgeEvaluator<FloatType>>());
         compound_evaluator->evaluators.push_back(std::make_shared<DescartesCollisionEdgeEvaluator<FloatType>>(
-            *prob.env, prob.manip, edge_collision_check_config, allow_collision, debug));
+            *prob.env, manip, edge_collision_check_config, allow_collision, debug));
         prob.edge_evaluators.push_back(compound_evaluator);
       }
       else
@@ -283,7 +291,15 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
   auto sampler = std::make_shared<descartes_light::FixedJointWaypointSampler<FloatType>>(state);
   prob.samplers.push_back(std::move(sampler));
 
-  std::vector<std::string> joint_names = prob.manip->getJointNames();
+  tesseract_kinematics::KinematicGroup::ConstPtr manip;
+  if (override_ik)
+  {
+    manip = prob.env->getKinematicGroup(group_name, ik_solver_name);
+  }
+  else
+    manip = prob.manip;
+
+  std::vector<std::string> joint_names = manip->getJointNames();
 
   if (index != 0)
   {
@@ -296,7 +312,7 @@ void DescartesDefaultPlanProfile<FloatType>::apply(DescartesProblem<FloatType>& 
         compound_evaluator->evaluators.push_back(
             std::make_shared<descartes_light::EuclideanDistanceEdgeEvaluator<FloatType>>());
         compound_evaluator->evaluators.push_back(std::make_shared<DescartesCollisionEdgeEvaluator<FloatType>>(
-            *prob.env, prob.manip, edge_collision_check_config, allow_collision, debug));
+            *prob.env, manip, edge_collision_check_config, allow_collision, debug));
         prob.edge_evaluators.push_back(compound_evaluator);
       }
       else
