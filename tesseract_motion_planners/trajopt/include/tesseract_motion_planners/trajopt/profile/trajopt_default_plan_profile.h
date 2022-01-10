@@ -82,6 +82,9 @@ public:
   std::vector<std::tuple<sco::VectorOfVector::func, sco::MatrixOfVector::func, sco::ConstraintType, Eigen::VectorXd>>
       constraint_error_functions;
 
+  std::vector<std::tuple<sco::VectorOfVector::func, sco::MatrixOfVector::func, sco::PenaltyType, Eigen::VectorXd>>
+      cost_error_functions;
+
   void apply(trajopt::ProblemConstructionInfo& pci,
              const CartesianWaypoint& cartesian_waypoint,
              const Instruction& parent_instruction,
@@ -100,6 +103,8 @@ public:
 
 protected:
   void addConstraintErrorFunctions(trajopt::ProblemConstructionInfo& pci, int index) const;
+
+  void addCostErrorFunctions(trajopt::ProblemConstructionInfo& pci, int index) const;
 
   void addAvoidSingularity(trajopt::ProblemConstructionInfo& pci, const std::vector<int>& fixed_steps) const;
 };

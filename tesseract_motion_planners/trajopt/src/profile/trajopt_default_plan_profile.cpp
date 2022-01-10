@@ -160,6 +160,7 @@ void TrajOptDefaultPlanProfile::apply(trajopt::ProblemConstructionInfo& pci,
 
   // Add constraints from error functions if available.
   addConstraintErrorFunctions(pci, index);
+  addCostErrorFunctions(pci, index);
 }
 
 void TrajOptDefaultPlanProfile::apply(trajopt::ProblemConstructionInfo& pci,
@@ -195,6 +196,22 @@ void TrajOptDefaultPlanProfile::addConstraintErrorFunctions(trajopt::ProblemCons
     ef->coeff = std::get<3>(c);
 
     pci.cnt_infos.push_back(ef);
+  }
+}
+
+void TrajOptDefaultPlanProfile::addCostErrorFunctions(trajopt::ProblemConstructionInfo& pci, int index) const
+{
+  for (const auto& c : cost_error_functions)
+  {
+    trajopt::TermInfo::Ptr ti =
+        createUserDefinedTermInfo(index, index, std::get<0>(c), std::get<1>(c), trajopt::TT_COST);
+
+    // Update the term info with the (possibly) new start and end state indices for which to apply this cost
+    std::shared_ptr<trajopt::UserDefinedTermInfo> ef = std::static_pointer_cast<trajopt::UserDefinedTermInfo>(ti);
+    ef->cost_penalty_type = std::get<2>(c);
+    ef->coeff = std::get<3>(c);
+
+    pci.cost_infos.push_back(ef);
   }
 }
 
