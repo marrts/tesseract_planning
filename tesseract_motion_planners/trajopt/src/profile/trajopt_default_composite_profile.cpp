@@ -222,8 +222,21 @@ void TrajOptDefaultCompositeProfile::apply(trajopt::ProblemConstructionInfo& pci
   if (smooth_jerks)
     addJerkSmoothing(pci, start_index, end_index, fixed_indices);
 
-  //  if (!constraint_error_functions.empty())
-  //    addConstraintErrorFunctions(pci, start_index, end_index, fixed_indices);
+  if (!constraint_error_functions.empty())
+  {
+    for (const auto& c : constraint_error_functions)
+    {
+      trajopt::TermInfo::Ptr ti =
+          createUserDefinedTermInfo(start_index, end_index, std::get<0>(c), std::get<1>(c), trajopt::TT_CNT);
+
+      // Update the term info with the (possibly) new start and end state indices for which to apply this cost
+      std::shared_ptr<trajopt::UserDefinedTermInfo> ef = std::static_pointer_cast<trajopt::UserDefinedTermInfo>(ti);
+      ef->constraint_type = std::get<2>(c);
+      ef->coeff = std::get<3>(c);
+
+      pci.cnt_infos.push_back(ef);
+    }
+  }
 
   if (avoid_singularity)
     addAvoidSingularity(pci, start_index, end_index, manip_info.tcp_frame, fixed_indices);
