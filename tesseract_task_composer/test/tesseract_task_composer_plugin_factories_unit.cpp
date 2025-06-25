@@ -312,6 +312,92 @@ TEST(TesseractTaskComposerFactoryUnit, PluginFactorAPIUnit)  // NOLINT
   }
 }
 
+// TESTING TaskComposerPluginFactory Timing Analysis
+
+// Helper function to perform timing analysis and check for memory leaks
+void performTimingAnalysis(const std::vector<double>& timings, const std::string& test_name)
+{
+  // Linear regression to check for upward trend
+  double n = static_cast<double>(timings.size());
+  double sum_x = 0.0, sum_y = 0.0, sum_xy = 0.0, sum_x2 = 0.0;
+  for (size_t i = 0; i < timings.size(); ++i)
+  {
+    sum_x += static_cast<double>(i);
+    sum_y += timings[i];
+    sum_xy += static_cast<double>(i) * timings[i];
+    sum_x2 += static_cast<double>(i) * static_cast<double>(i);
+  }
+  double denominator = n * sum_x2 - sum_x * sum_x;
+  double slope = (denominator != 0.0) ? (n * sum_xy - sum_x * sum_y) / denominator : 0.0;
+
+  double mean = sum_y / n;
+  EXPECT_LT(slope, mean * 0.10) << "Detected a significant upward trend in timings (slope=" << slope 
+                                << ") for test: " << test_name;
+}
+
+// Helper function template to run timing tests with different factory creation methods
+template<typename FactoryCreator>
+void runFactoryTimingTest(const std::string& test_name, FactoryCreator factory_creator)
+{
+  constexpr int num_iterations = 10;
+  std::vector<double> timings;
+
+  for (int i = 0; i < num_iterations; ++i)
+  {
+    auto start = std::chrono::high_resolution_clock::now();
+    factory_creator();
+    auto end = std::chrono::high_resolution_clock::now();
+    double elapsed = std::chrono::duration_cast<std::chrono::duration<double>>(end - start).count();
+    timings.push_back(elapsed);
+    std::cout << test_name << " - Iteration " << i << ": " << elapsed << " seconds" << std::endl;
+  }
+
+  performTimingAnalysis(timings, test_name);
+}
+
+TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimes)
+{
+  std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
+  YAML::Node plugin_config = YAML::LoadFile(config_path.string());
+  tesseract_common::GeneralResourceLocator locator;
+
+  runFactoryTimingTest("LoadFromYAMLNode", [&]() {
+    tesseract_planning::TaskComposerPluginFactory factory(plugin_config, locator);
+  });
+}
+
+TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesFromFile)
+{
+  std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
+  tesseract_common::GeneralResourceLocator locator;
+
+  runFactoryTimingTest("LoadFromFile", [&]() {
+    tesseract_planning::TaskComposerPluginFactory factory(config_path, locator);
+  });
+}
+
+TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesFromString)
+{
+  std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
+  tesseract_common::GeneralResourceLocator locator;
+  const std::string config_str = tesseract_common::fileToString(config_path);
+
+  runFactoryTimingTest("LoadFromString", [&]() {
+    tesseract_planning::TaskComposerPluginFactory factory(config_str, locator);
+  });
+}
+
+TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesFromFileWithLoadYamlFile)
+{
+  std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
+  tesseract_common::GeneralResourceLocator locator;
+
+  runFactoryTimingTest("LoadFromFileWithLoadYamlFile", [&]() {
+    YAML::Node plugin_config = tesseract_common::loadYamlFile(config_path.string(), locator);
+    tesseract_planning::TaskComposerPluginFactory factory(plugin_config, locator);
+  });
+}
+
 int main(int argc, char** argv)
 {
   testing::InitGoogleTest(&argc, argv);
