@@ -366,6 +366,17 @@ TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimes)
   });
 }
 
+TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesInLambda)
+{
+  std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
+  tesseract_common::GeneralResourceLocator locator;
+
+  runFactoryTimingTest("LoadFromYAMLNodeInLambda", [&]() {
+    YAML::Node plugin_config = YAML::LoadFile(config_path.string());
+    tesseract_planning::TaskComposerPluginFactory factory(plugin_config, locator);
+  });
+}
+
 TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesFromFile)
 {
   std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
@@ -394,6 +405,17 @@ TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesFr
 
   runFactoryTimingTest("LoadFromFileWithLoadYamlFile", [&]() {
     YAML::Node plugin_config = tesseract_common::loadYamlFile(config_path.string(), locator);
+    tesseract_planning::TaskComposerPluginFactory factory(plugin_config, locator);
+  });
+}
+
+TEST(TesseractTaskComposerFactoryUnit, LoadTaskComposerPluginFactoryMultiTimesFromFileWithLoadYamlFileOutside)
+{
+  std::filesystem::path config_path(std::string(TESSERACT_TASK_COMPOSER_DIR) + "/config/task_composer_plugins.yaml");
+  tesseract_common::GeneralResourceLocator locator;
+  YAML::Node plugin_config = tesseract_common::loadYamlFile(config_path.string(), locator);
+
+  runFactoryTimingTest("LoadFromFileWithLoadYamlFileOutside", [&]() {
     tesseract_planning::TaskComposerPluginFactory factory(plugin_config, locator);
   });
 }
