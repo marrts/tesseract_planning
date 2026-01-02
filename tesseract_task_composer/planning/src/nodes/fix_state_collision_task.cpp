@@ -334,6 +334,7 @@ bool moveWaypointFromCollisionTrajopt(WaypointPoly& waypoint,
 
   // Run trajopt optimization
   sco::BasicTrustRegionSQP opt(prob);
+  opt.setParameters(pci.opt_info);
   opt.initialize(trajToDblVec(prob->GetInitTraj()));
   opt.optimize();
   if (opt.results().status != sco::OptStatus::OPT_CONVERGED)
