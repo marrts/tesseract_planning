@@ -333,35 +333,53 @@ bool IterativeSplineParameterization::compute(CompositeInstruction& composite_in
                             num_points);
     return false;
   }
+
+  constexpr double endpoint_bound_tolerance = 0.0001;
+  const auto snap_to_endpoint_bounds = [=](double& value, const double min_value, const double max_value) {
+    if (value > max_value && (value - max_value) < endpoint_bound_tolerance)
+      value = max_value;
+    else if (value < min_value && (min_value - value) < endpoint_bound_tolerance)
+      value = min_value;
+  };
+
   for (std::size_t j = 0; j < static_cast<std::size_t>(trajectory.dof()); j++)
   {
+    snap_to_endpoint_bounds(t2[j].velocities_[0], t2[j].min_velocity_[0], t2[j].max_velocity_[0]);
+    snap_to_endpoint_bounds(t2[j].velocities_[num_points - 1],
+                            t2[j].min_velocity_[num_points - 1],
+                            t2[j].max_velocity_[num_points - 1]);
+    snap_to_endpoint_bounds(t2[j].accelerations_[0], t2[j].min_acceleration_[0], t2[j].max_acceleration_[0]);
+    snap_to_endpoint_bounds(t2[j].accelerations_[num_points - 1],
+                            t2[j].min_acceleration_[num_points - 1],
+                            t2[j].max_acceleration_[num_points - 1]);
+
     if (t2[j].velocities_[0] > t2[j].max_velocity_[0] || t2[j].velocities_[0] < t2[j].min_velocity_[0])
     {
-      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Initial velocity %f out of bounds.",
-                              t2[j].velocities_[0]);
+      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Initial velocity %f out of bounds for DOF %u (min: %f, max: %f).",
+                              t2[j].velocities_[0], j, t2[j].min_velocity_[0], t2[j].max_velocity_[0]);
       return false;
     }
 
     if (t2[j].velocities_[num_points - 1] > t2[j].max_velocity_[num_points - 1] ||
         t2[j].velocities_[num_points - 1] < t2[j].min_velocity_[num_points - 1])
     {
-      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Final velocity %f out of bounds.",
-                              t2[j].velocities_[num_points - 1]);
+      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Final velocity %f out of bounds for DOF %u (min: %f, max: %f).",
+                              t2[j].velocities_[num_points - 1], j, t2[j].min_velocity_[num_points - 1], t2[j].max_velocity_[num_points - 1]);
       return false;
     }
 
     if (t2[j].accelerations_[0] > t2[j].max_acceleration_[0] || t2[j].accelerations_[0] < t2[j].min_acceleration_[0])
     {
-      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Initial acceleration %f out of bounds\n",
-                              t2[j].accelerations_[0]);
+      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Initial acceleration %f out of bounds for DOF %u (min: %f, max: %f)\n",
+                              t2[j].accelerations_[0], j, t2[j].min_acceleration_[0], t2[j].max_acceleration_[0]);
       return false;
     }
 
     if (t2[j].accelerations_[num_points - 1] > t2[j].max_acceleration_[num_points - 1] ||
         t2[j].accelerations_[num_points - 1] < t2[j].min_acceleration_[num_points - 1])
     {
-      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Final acceleration %f out of bounds\n",
-                              t2[j].accelerations_[num_points - 1]);
+      CONSOLE_BRIDGE_logError("iterative_spline_parameterization: Final acceleration %f out of bounds for DOF %u (min: %f, max: %f)\n",
+                              t2[j].accelerations_[num_points - 1], j, t2[j].min_acceleration_[num_points - 1], t2[j].max_acceleration_[num_points - 1]);
       return false;
     }
   }
